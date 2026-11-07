@@ -64,8 +64,13 @@ python3 -m unittest discover -s tests -v   # 18 тестов
   по тегу `v*`.
 - Добавлены `pyproject.toml`, `LICENSE` (MIT), `CHANGELOG.md`, `.gitignore`,
   `.gitattributes`, `README.en.md`, `docs/screenshot.svg`.
-- Проект инициализирован как git-репозиторий (ветка `main`), локальный автор
-  `xpmaekr <263990399+xpmaekr@users.noreply.github.com>`.
+- Проект опубликован: https://github.com/xpmaekr/omarchy-custom-iso
+  (ветка `main`, автор `xpmaekr <263990399+xpmaekr@users.noreply.github.com>`).
+- Релиз `v1.0.0` создан, GitHub Actions собрал wheel и sdist:
+  https://github.com/xpmaekr/omarchy-custom-iso/releases/tag/v1.0.0
+  CI и Release workflow завершились успешно.
+- GitHub CLI (`gh`) установлен и авторизован под аккаунтом `xpmaekr`;
+  `gh auth setup-git` настроен для push по HTTPS.
 - Пароль sudo по умолчанию теперь пустой: пустое поле — обычный запрос sudo.
 
 ## Ключевые файлы
@@ -190,7 +195,7 @@ patched `omarchy-iso-make`, поэтому Docker через sudo тоже ра�
 
 ## Известные ограничения / следующие шаги
 
-1. Проверить результат полной сборки ISO (лог `/tmp/opencode/e2e-build2.log`)
+1. Проверить результат полной сборки ISO (лог `/tmp/opencode/e2e-build3.log`)
    и наличие pfetch/cmatrix в `offline mirror` и root image
    (`var/lib/pacman/local`).
 2. Проверить сценарий repo-пакета (например `firefox`) — он не должен
@@ -202,9 +207,9 @@ patched `omarchy-iso-make`, поэтому Docker через sudo тоже ра�
    десятки минут.
 6. UI: при желании добавить настройку extra-аргументов `omarchy-iso-make`
    (поле `extra_build_args` в конфиге уже есть).
-7. Для публикации на GitHub нужен токен/`gh auth login`: в окружении нет ни
-   `gh`, ни сохранённых credentials. Локальный git-репозиторий и тег
-   `v1.0.0` создаются без сети.
+7. После изменений: `git push` + при необходимости новый тег `v*` (Release
+   workflow сам соберёт артефакты). Перед тегом обновить версию в
+   `omarchy_custom_iso/__init__.py` и `CHANGELOG.md`.
 
 ## Старые попытки
 
