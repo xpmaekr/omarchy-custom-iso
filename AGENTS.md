@@ -7,7 +7,7 @@ TUI-приложение на Textual, которое собирает каст�
 
 **Расположение проекта:** `/home/nazk/omarchy-custom-iso`
 **Репозиторий:** `https://github.com/xpmaekr/omarchy-custom-iso`
-**Версия:** 1.0.0 (`omarchy_custom_iso/__init__.py`)
+**Версия:** 1.1.0 (`omarchy_custom_iso/__init__.py`)
 
 Запуск:
 
@@ -70,7 +70,15 @@ python3 -m unittest discover -s tests -v   # 18 тестов
   сборка падала на `/builder/node-release.sh: No such file or directory`.
   После фикса `node-release.sh` — настоящий файл, симлинков в `builder/` нет.
 - Добавлен неинтерактивный режим `--build` (использует `core.run_build`).
-- Добавлены офлайн-тесты (18), CI (Python 3.10/3.12/3.13) и release-workflow
+- **Русская раскладка**: при выборе русского языка Omarchy сам делает
+  `us,ru`. Дополнительно `patch_root_image()` правит в root image
+  `/usr/share/omarchy/default/hypr/input.lua`: если в списке раскладок есть
+  `ru`, включается `grp:alt_shift_toggle` (Alt+Shift) вместо стандартного
+  Left Alt + Right Alt. Upstream не трогается — патчится копия
+  `builder/build-root-image.sh` в build root. Проверено на реальном
+  `input.lua` из собранного ISO: `luac -p` проходит, sed меняет обе точки
+  добавления опции и проверку «опция уже есть».
+- Добавлены офлайн-тесты (20), CI (Python 3.10/3.12/3.13) и release-workflow
   по тегу `v*`.
 - Добавлены `pyproject.toml`, `LICENSE` (MIT), `CHANGELOG.md`, `.gitignore`,
   `.gitattributes`, `README.en.md`, `docs/screenshot.svg`.
@@ -168,7 +176,12 @@ host-кэш pacman и не вызывать `gum` в конце.
 - `REQUIRED_BLOCK` — перед `prune-offline-mirror.sh`;
 - `IMAGE_INSERT` — в `image_package_list()`;
 - `patch_iso_make()` — добавление bind-mount `/custom-packages` и замена
-  `DOCKER=(sudo docker)` на `DOCKER=("${OMARCHY_SUDO_WRAPPER:-sudo}" docker)`.
+  `DOCKER=(sudo docker)` на `DOCKER=("${OMARCHY_SUDO_WRAPPER:-sudo}" docker)`;
+- `ROOT_IMAGE_KEYBOARD` / `patch_root_image()` — в `build-root-image.sh`
+  после `echo "Root image holds ... packages"`: sed правит
+  `/usr/share/omarchy/default/hypr/input.lua` так, что при наличии `ru`
+  в `kb_layout` используется `grp:alt_shift_toggle`. Если sed не сработал
+  (upstream переписал файл), сборка продолжается с предупреждением.
 
 `_replace_once()` проверяет, что якорь встречается ровно один раз. Если
 upstream изменит `build-iso.sh`, приложение явно упадёт с понятной ошибкой —

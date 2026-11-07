@@ -67,6 +67,25 @@ class PatchTests(unittest.TestCase):
         self.assertIn('OMARCHY_CUSTOM_REPO_PACKAGES=${OMARCHY_CUSTOM_REPO_PACKAGES:-}', patched)
         self.assertIn('DOCKER=("${OMARCHY_SUDO_WRAPPER:-sudo}" docker)', patched)
 
+    def test_root_image_gets_russian_alt_shift(self) -> None:
+        source = (
+            'installed=$(find "$root/var/lib/pacman/local" -mindepth 1 '
+            '-maxdepth 1 -type d | wc -l)\n'
+            'echo "Root image holds $installed packages"\n'
+        )
+        patched = core.patch_root_image(source)
+
+        self.assertIn("Alt+Shift switching for Russian installs", patched)
+        self.assertIn('input_lua="$root/usr/share/omarchy/default/hypr/input.lua"', patched)
+        self.assertIn('kb_layout:find("ru", 1, true)', patched)
+        self.assertIn("grp:alt_shift_toggle", patched)
+        # The anchor itself stays in place, so the image build still reports it.
+        self.assertIn('echo "Root image holds $installed packages"', patched)
+
+    def test_root_image_missing_anchor_is_an_error(self) -> None:
+        with self.assertRaises(RuntimeError):
+            core.patch_root_image("nothing to patch here\n")
+
 
 class HelperTests(unittest.TestCase):
     def test_clean_dep(self) -> None:

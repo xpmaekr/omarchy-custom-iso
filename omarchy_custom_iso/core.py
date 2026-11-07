@@ -2,18 +2,22 @@
 """Core helpers for the Omarchy custom ISO builder.
 
 Nothing in here touches the upstream omarchy-iso checkout.  The build is run
-through a generated "build root" full of symlinks: a patched copy of
-bin/omarchy-iso-make and builder/build-iso.sh live in a temporary directory,
-everything else points back at the real checkout.  That keeps the upstream git
-tree clean (no backups to restore, no diffs to resolve after a pull).
+through a generated "build root" full of symlinks: patched copies of
+bin/omarchy-iso-make, builder/build-iso.sh and builder/build-root-image.sh
+live in a temporary directory, everything else points back at the real
+checkout.  That keeps the upstream git tree clean (no backups to restore, no
+diffs to resolve after a pull).
 
-The patched build-iso.sh learns two things:
+The patched scripts learn two things:
 
   * packages mounted at /custom-packages are copied into the offline mirror,
     their repository dependencies are pulled into the mirror, and the packages
     are added to the root filesystem image (so they are preinstalled);
   * names in $OMARCHY_CUSTOM_REPO_PACKAGES are added to the mirror and to the
     root image too (for normal repository packages).
+
+The root image patch also switches Russian layouts with Alt+Shift instead of
+Omarchy's Left Alt + Right Alt.
 """
 
 from __future__ import annotations
@@ -828,6 +832,25 @@ IMAGE_INSERT = r'''    ((${#custom_package_names[@]} == 0)) || printf '%s\n' "${
     ((${#custom_repo_names[@]} == 0)) || printf '%s\n' "${custom_repo_names[@]}"
 '''
 
+ROOT_IMAGE_KEYBOARD = r'''
+# --- omarchy-custom-iso: Alt+Shift switching for Russian installs ----------
+# Omarchy pairs a non-Latin layout with us and toggles the pair with Left Alt +
+# Right Alt. Russian users expect Alt+Shift, so use grp:alt_shift_toggle when
+# the layout list contains ru. The image is static but the chosen layout is
+# not, hence the runtime check in the Lua that reads /etc/vconsole.conf.
+input_lua="$root/usr/share/omarchy/default/hypr/input.lua"
+if [[ -f $input_lua ]]; then
+  sed -i \
+    -e 's|kb_options = kb_options \.\. ",grp:alts_toggle"|kb_options = kb_options .. (kb_layout:find("ru", 1, true) and ",grp:alt_shift_toggle" or ",grp:alts_toggle")|g' \
+    -e 's|if not kb_options:find("grp:alts_toggle", 1, true) then|if not (kb_options:find("grp:alts_toggle", 1, true) or kb_options:find("grp:alt_shift_toggle", 1, true)) then|' \
+    "$input_lua"
+  if ! grep -q 'grp:alt_shift_toggle' "$input_lua"; then
+    echo "WARNING: omarchy-custom-iso: could not patch the keyboard layout switch in $input_lua" >&2
+  fi
+fi
+# --- omarchy-custom-iso end ------------------------------------------------
+'''
+
 
 def _replace_once(text: str, old: str, new: str, label: str) -> str:
     if text.count(old) != 1:
@@ -905,8 +928,19 @@ def patch_iso_make(source: str) -> str:
     return text
 
 
+def patch_root_image(source: str) -> str:
+    """Teach the root image to switch Russian layouts with Alt+Shift."""
+    anchor = (
+        'installed=$(find "$root/var/lib/pacman/local" -mindepth 1 '
+        '-maxdepth 1 -type d | wc -l)\n'
+        'echo "Root image holds $installed packages"\n'
+    )
+    text = _replace_once(source, anchor, anchor + ROOT_IMAGE_KEYBOARD, "root image keyboard patch")
+    return text
+
+
 def prepare_build_root(repo_dir: Path, log) -> Path:
-    """Create a build root with patched copies of the two upstream scripts.
+    """Create a build root with patched copies of the upstream scripts.
 
     ``builder/`` must be a real copy, not a symlink farm: it is bind-mounted
     into the Docker container, where absolute symlinks back into the host
@@ -917,7 +951,8 @@ def prepare_build_root(repo_dir: Path, log) -> Path:
     repo_dir = repo_dir.resolve()
     iso_make = repo_dir / "bin" / "omarchy-iso-make"
     build_iso = repo_dir / "builder" / "build-iso.sh"
-    if not iso_make.is_file() or not build_iso.is_file():
+    build_root_image = repo_dir / "builder" / "build-root-image.sh"
+    if not iso_make.is_file() or not build_iso.is_file() or not build_root_image.is_file():
         raise RuntimeError(tr("core.checkout_missing", repo=repo_dir))
     missing_dirs = [name for name in ("archiso", "configs") if not (repo_dir / name).is_dir()]
     if missing_dirs:
@@ -939,6 +974,10 @@ def prepare_build_root(repo_dir: Path, log) -> Path:
     patched_iso = patch_build_iso(build_iso.read_text(encoding="utf-8"))
     (builder_dir / "build-iso.sh").write_text(patched_iso, encoding="utf-8")
     os.chmod(builder_dir / "build-iso.sh", 0o755)
+
+    patched_root_image = patch_root_image(build_root_image.read_text(encoding="utf-8"))
+    (builder_dir / "build-root-image.sh").write_text(patched_root_image, encoding="utf-8")
+    os.chmod(builder_dir / "build-root-image.sh", 0o755)
 
     for name in ("archiso", "configs"):
         os.symlink(repo_dir / name, BUILDROOT_DIR / name)

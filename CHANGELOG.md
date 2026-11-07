@@ -3,6 +3,16 @@
 Все заметные изменения проекта. Формат — [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/),
 версии — [SemVer](https://semver.org/lang/ru/).
 
+## [1.1.0] — 2026-11-08
+
+### Добавлено
+
+- Для русского языка в установленной системе автоматически включаются
+  раскладки `us` + `ru`, а переключение работает по **Alt+Shift** (вместо
+  стандартного для Omarchy Left Alt + Right Alt). Патч `build-root-image.sh`
+  меняет `default/hypr/input.lua` внутри root image; upstream checkout
+  по-прежнему не модифицируется.
+
 ## [1.0.0] — 2026-11-08
 
 Первый публичный релиз.

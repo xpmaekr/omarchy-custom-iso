@@ -24,6 +24,7 @@ already present after installing the ISO — no network or manual setup needed.
   are **never installed on the host**; only build dependencies are.
 - The upstream `omarchy-iso` checkout is never modified: patches are applied to
   a temporary copy of the build scripts.
+- Russian installs get `us` + `ru` layouts with **Alt+Shift** switching.
 - Preinstall both locally built AUR packages and regular repository packages.
 - Russian and English UI, build log written to a file.
 - Unattended build: `omarchy-custom-iso --build`.
