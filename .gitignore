@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+
+# Tooling caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Local backups (created manually before edits)
+*.bak-*
+*.orig
+
+# Local runtime state (normally under ~/.config and ~/.cache)
+config.json
+sudo-password
+sudo-wrapper.sh
+logs/
