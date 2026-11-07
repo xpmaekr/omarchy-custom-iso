@@ -52,8 +52,18 @@ python3 -m unittest discover -s tests -v   # 18 тестов
 - Парсер `.SRCINFO` учитывает архитектурные makedepends
   (`makedepends_x86_64`), поэтому repo-makedepends вроде `asar` (extra)
   ставятся на хост перед `makepkg`.
-- **Полная сборка ISO запускается end-to-end** через `--build` в изолированных
-  XDG-каталогах (`/tmp/opencode/oci-e2e/...`, пакеты pfetch + cmatrix).
+- **Полная сборка ISO успешно пройдена end-to-end** через `--build` в
+  изолированных XDG-каталогах (`/tmp/opencode/oci-e2e/...`, пакеты
+  pfetch из AUR + cmatrix из репозитория). Лог: `/tmp/opencode/e2e-build5.log`,
+  ISO: `/home/nazk/omarchy-iso-build/release/omarchy-2026.11.07-x86_64-quattro.iso`
+  (6.2G). Проверено по образу: в root image (`omarchy-root` subvolume,
+  `var/lib/pacman/local`) есть `cmatrix-2.0-4` и `pfetch-1.11.0-1`,
+  бинарники `/usr/bin/cmatrix` и `/usr/bin/pfetch` на месте. Live
+  `airootfs.sfs` их не содержит — это нормально, приложения ставятся в
+  целевую систему. Во время отладки были два сбоя окружения: потерянный
+  лог Docker-клиента (контейнер продолжил работу) и разовый
+  `paru -G ... corrupted double-linked list`; повторный запуск прошёл.
+  Для длинных прогонов дублировать лог контейнера через `docker logs -f`.
 - **Критический фикс**: `buildroot/builder/` теперь реальная копия
   (`shutil.copytree`), а не ферма симлинков. Docker монтирует каталог внутрь
   контейнера, где абсолютные симлинки на хост-пути не работают — первая
@@ -195,14 +205,14 @@ patched `omarchy-iso-make`, поэтому Docker через sudo тоже ра�
 
 ## Известные ограничения / следующие шаги
 
-1. Проверить результат полной сборки ISO (лог `/tmp/opencode/e2e-build3.log`)
-   и наличие pfetch/cmatrix в `offline mirror` и root image
-   (`var/lib/pacman/local`).
-2. Проверить сценарий repo-пакета (например `firefox`) — он не должен
-   собираться, только попасть в image.
+1. Полная сборка ISO проверена (см. «Текущий статус»): pfetch и cmatrix
+   есть в установленной системе (root image), repo-пакет cmatrix не
+   собирался через makepkg.
+2. Проверить сценарий repo-пакета на чужом примере (например `firefox`) —
+   он не должен собираться, только попасть в image.
 3. Проверить пакет с AUR-зависимостью (не только одиночные `-bin`/скрипты).
 4. Docker на этой машине работает только через sudo (в `--check` пишет
-   «через sudo»). Wrapper это покрывает, полный прогон проверяется.
+   «через sudo»). Wrapper это покрывает; полный прогон проверен.
 5. Первая сборка ISO скачивает Docker image и гигабайты пакетов, может идти
    десятки минут.
 6. UI: при желании добавить настройку extra-аргументов `omarchy-iso-make`
