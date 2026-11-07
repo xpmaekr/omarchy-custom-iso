@@ -1,3 +1,5 @@
+fully vibecoded btw
+
 # Omarchy Custom ISO
 
 [![CI](https://github.com/xpmaekr/omarchy-custom-iso/actions/workflows/ci.yml/badge.svg)](https://github.com/xpmaekr/omarchy-custom-iso/actions/workflows/ci.yml)
